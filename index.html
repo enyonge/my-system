@@ -20,7 +20,7 @@
         .container { max-width: 1100px; margin: 0 auto; }
         
         .logo-container { text-align: center; margin-bottom: 10px; }
-        .university-logo { max-width: 250px; height: auto; display: inline-block; }
+        .university-logo { max-width: 250px; height: auto; }
 
         header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; position: relative; }
         header h1 { color: var(--primary); font-size: 26px; margin: 10px 0; font-weight: 800; letter-spacing: -0.5px; }
@@ -49,7 +49,6 @@
         input:focus, select:focus { border-color: var(--primary); outline: none; background-color: #FFFDFD; box-shadow: 0 0 0 3px rgba(128,20,36,0.08); }
         .selection-box { background: #F8FAFC; padding: 15px; border: 1px solid #E2E8F0; border-radius: 6px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .time-item { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; padding: 4px; color: #334155; }
-        .time-item.disabled { opacity: 0.4; cursor: not-allowed; }
         .time-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; margin: 0; accent-color: var(--primary); }
         .custom-time-row { grid-column: span 2; display: flex; align-items: center; gap: 10px; margin-top: 5px; padding-top: 12px; border-top: 1px dashed #E2E8F0; }
         .date-tag { background: #475569; color: white; padding: 3px 12px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; margin-right: 6px; margin-top: 6px; font-weight: 600; }
@@ -73,7 +72,7 @@
 
 <div class="container">
     <div class="logo-container">
-        <img src="https://lh3.googleusercontent.com/d/1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo" onerror="this.src='https://i.ibb.co/v4KjX7x/image.png'">
+        <img src="https://drive.google.com/uc?export=view&id=1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo">
     </div>
 
     <header>
@@ -181,7 +180,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2tfIz5tBs6foLjdCHQpvIJe8ySIidSJ-VnAKk1ppez9aRn3gptjBfvHGDJDgRWvCr/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzprzBSQJVfPpyCHrjnn_2yw4P3XHonzL5hOUN8KRbD9KNMBEu8wnZ3i7zh2x8n4cw/exec";
     const ADMIN_PW = "7365";
     let isAdmin = false;
     let db = [];
@@ -360,6 +359,7 @@
         location.reload();
     }
 
+    // 🛠️ 수정된 반납 함수 적용
     async function returnItem(i) {
         if(confirm('반납 처리하시겠습니까? (구글 시트에도 즉시 반영됩니다)')) {
             const item = db[i];
@@ -368,22 +368,23 @@
                 id: String(item.id),
                 name: String(item.name),
                 no: String(item.no),
-                date: String(item.date),
-                times: String(item.times),
-                active: false
+                date: String(item.date)
             };
 
             try {
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(updatePayload),
-                    mode: 'no-cors'
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePayload)
                 });
+
                 db[i].active = false;
                 render();
-                alert('반납 처리가 완료되었습니다.');
+                alert('반납 요청을 보냈습니다. 잠시 후 시트를 확인해 주세요.');
             } catch(e) {
-                alert('네트워크 오류로 시트 반영에 실패했습니다.');
+                console.error("반납 오류:", e);
+                alert('네트워크 오류가 발생했습니다.');
             }
         }
     }
