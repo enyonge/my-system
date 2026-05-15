@@ -14,10 +14,14 @@
             --bg: #F8FAFC;           
             --text-dark: #1E293B;    
             --admin-color: #6D28D9;
-            --success: #16A34A; /* 반납 완료용 녹색 추가 */
+            --success: #16A34A; 
         }
         body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-dark); line-height: 1.6; }
         .container { max-width: 1100px; margin: 0 auto; }
+        
+        .logo-container { text-align: center; margin-bottom: 10px; }
+        .university-logo { max-width: 250px; height: auto; }
+
         header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; position: relative; }
         header h1 { color: var(--primary); font-size: 26px; margin: 10px 0; font-weight: 800; letter-spacing: -0.5px; }
         .admin-login-btn { position: absolute; right: 0; top: 5px; padding: 7px 14px; font-size: 12px; background: #475569; color: #FFF; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; transition: 0.2s; }
@@ -30,7 +34,6 @@
         .status-on { background: var(--available); }
         .status-off { background: var(--busy); }
 
-        /* 상태별 텍스트 배지 스타일 추가 */
         .badge-returned { background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
         .badge-active { background: var(--busy); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
         .badge-timeout { background: #64748B; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
@@ -69,6 +72,10 @@
 <body>
 
 <div class="container">
+    <div class="logo-container">
+        <img src="image_ed3820.png" alt="계명문화대학교 로고" class="university-logo">
+    </div>
+
     <header>
         <h1>🎥 이동형 콘텐츠 제작 시스템 관리</h1>
         <button id="adminBtn" class="admin-login-btn" onclick="toggleAdmin()">🔒 관리자 모드</button>
@@ -169,7 +176,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4NQXWZIDNcW8CyQByK6c0XfnYfWFEBityXvc0mZJXhXeLlCaQfEQIaWWLtpwfdGPi/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1CdIdSCXZJNeXrovx2i_wx-SPOOU9-CRAP0YwsQyGNYSdIYbheBK1EM7yB4FP8eBl/exec";
     const ADMIN_PW = "7365";
     let isAdmin = false;
     let db = [];
@@ -204,12 +211,10 @@
     updateTimeOptions();
 
     function checkAutoReturn(item) {
-        if (!item.active) return false;
+        if (item.active === false || item.active === "false") return false;
         const now = new Date();
         const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-        
         if (item.date < today) return true;
-        
         if (item.date === today) {
             try {
                 const times = item.times.split(', ');
@@ -263,12 +268,12 @@
         db.slice().reverse().forEach((item, idx) => {
             const realIdx = db.length - 1 - idx;
             const isAutoReturned = checkAutoReturn(item);
-            const isActuallyActive = item.active && !isAutoReturned;
+            const isActuallyActive = (item.active === true || item.active === "true") && !isAutoReturned;
 
             if (isActuallyActive && item.date === today) statusMap[item.id] = '사용 중';
             
             let statusBadgeHtml = '';
-            if (!item.active) {
+            if (item.active === false || item.active === "false") {
                 statusBadgeHtml = '<span class="badge-returned">반납 완료</span>';
             } else if (isAutoReturned) {
                 statusBadgeHtml = '<span class="badge-timeout">시간 종료</span>';
@@ -286,7 +291,7 @@
                     <td>${item.subject}</td>
                     <td>${statusBadgeHtml}</td>
                     <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">
-                        ${item.active ? `<button onclick="returnItem(${realIdx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
+                        ${(item.active === true || item.active === "true") ? `<button onclick="returnItem(${realIdx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
                     </td>
                 </tr>`;
         });
@@ -317,7 +322,7 @@
 
         for (const date of selectedDates) {
             const conflict = db.find(item => 
-                item.active && !checkAutoReturn(item) && item.id === deviceId && item.date === date && 
+                (item.active === true || item.active === "true") && !checkAutoReturn(item) && item.id === deviceId && item.date === date && 
                 times.some(t => item.times.includes(t))
             );
             if (conflict) return alert(`중복 예약 오류:\n${date} 날짜의 선택하신 시간대는 이미 예약되어 있습니다.`);
@@ -331,16 +336,14 @@
 
         for (const date of selectedDates) {
             const payload = { 
+                action: "insert",
                 id: deviceId, name: name, no: no, date: date, 
                 times: times.join(', '), loc: loc, subject: sub, active: true, timestamp: submitTime 
             };
-            db.push(payload);
-        }
-        render();
-
-        for (let i = db.length - selectedDates.length; i < db.length; i++) {
+            
             try {
-                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(db[i]), mode: 'no-cors' });
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), mode: 'no-cors' });
+                db.push({ ...payload, active: true });
             } catch(e) { console.error("전송 오류:", e); }
         }
 
@@ -353,21 +356,26 @@
             const item = db[i];
             const updatePayload = {
                 action: "updateStatus",
-                id: item.id,
-                name: item.name,
-                no: item.no,
-                date: item.date
+                id: String(item.id),
+                name: String(item.name),
+                no: String(item.no),
+                date: String(item.date),
+                times: String(item.times),
+                active: false
             };
 
             try {
+                // 구글 시트 업데이트 요청
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(updatePayload),
                     mode: 'no-cors'
                 });
+                
+                // 로컬 데이터 상태 변경 및 UI 갱신
                 db[i].active = false;
-                alert('반납 처리가 구글 시트에 반영되었습니다.');
                 render();
+                alert('반납 처리가 완료되었습니다.');
             } catch(e) {
                 alert('네트워크 오류로 시트 반영에 실패했습니다.');
             }
@@ -380,8 +388,8 @@
         let csv = "﻿신청일시,장비번호,이름,사번,활용날짜,활용시간,장소,교과목,상태\n";
         db.forEach(i => {
             const ts = i.timestamp || "-"; 
-            let statusText = i.active ? '예약중' : '반납됨';
-            if (i.active && checkAutoReturn(i)) statusText = '시간 종료';
+            let statusText = (i.active === true || i.active === "true") ? '예약중' : '반납됨';
+            if ((i.active === true || i.active === "true") && checkAutoReturn(i)) statusText = '시간 종료';
             
             csv += `"${ts}",${i.id},${i.name},${i.no},${i.date},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
         });
@@ -393,12 +401,21 @@
     }
 
     async function loadData() {
-        db = JSON.parse(localStorage.getItem('m_system_final_v8')) || [];
-        render();
+        // 로컬 데이터 먼저 로드
+        const localData = localStorage.getItem('m_system_final_v8');
+        if (localData) {
+            db = JSON.parse(localData);
+            render();
+        }
+
+        // 구글 시트에서 최신 데이터 가져오기
         try {
             const res = await fetch(SCRIPT_URL);
             const cloudData = await res.json();
-            if(cloudData && cloudData.length > 0) { db = cloudData; render(); }
+            if(cloudData && cloudData.length > 0) { 
+                db = cloudData; 
+                render(); 
+            }
         } catch(e) { console.log("데이터 연동 중..."); }
     }
 
