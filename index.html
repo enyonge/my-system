@@ -55,7 +55,7 @@
         .date-tag b { margin-left: 6px; color: #FDA4AF; cursor: pointer; font-size: 13px; }
         button { padding: 11px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { opacity: 0.95; }
-        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(128,20,36,0.15); }
+        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         .btn-submit:hover { background: var(--primary-dark); }
         .btn-excel { background: #16A34A; color: white; flex: 2; }
         .btn-clear { background: #DC2626; color: white; flex: 1; }
@@ -180,7 +180,7 @@
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbws4egpz7U1NgzlWeac_eJf_mElLIyrCY01A4AnHhCyoEoLxaceQxZ95UnG5gRQe9Bi/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzprzBSQJVfPpyCHrjnn_2yw4P3XHonzL5hOUN8KRbD9KNMBEu8wnZ3i7zh2x8n4cw/exec";
     const ADMIN_PW = "7365";
     let isAdmin = false;
     let db = [];
@@ -249,10 +249,7 @@
         if (item.active === false || item.active === "false") return false;
         const now = new Date();
         const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-        
-        // 날짜 포맷 정리 (T 이후 문자 제거)
         const itemDate = String(item.date).split('T')[0];
-        
         if (itemDate < today) return true;
         if (itemDate === today) {
             try {
@@ -275,12 +272,15 @@
         body.innerHTML = '';
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
 
-        db.slice().reverse().forEach((item, idx) => {
-            const realIdx = db.length - 1 - idx;
-            
-            // 활용날짜 연도-월-일 변환
+        // 💡 날짜 기준 오름차순 정렬 (과거 -> 미래)
+        db.sort((a, b) => {
+            const dateA = String(a.date).split('T')[0];
+            const dateB = String(b.date).split('T')[0];
+            return dateA.localeCompare(dateB);
+        });
+
+        db.forEach((item, idx) => {
             const formattedDate = String(item.date).split('T')[0];
-            
             const isAutoReturned = checkAutoReturn(item);
             const isActuallyActive = (item.active === true || item.active === "true") && !isAutoReturned;
 
@@ -306,7 +306,7 @@
                     <td>${item.subject}</td>
                     <td>${statusBadgeHtml}</td>
                     <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">
-                        ${(item.active === true || item.active === "true") ? `<button onclick="returnItem(${realIdx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
+                        ${(item.active === true || item.active === "true") ? `<button onclick="returnItem(${idx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
                     </td>
                 </tr>`;
         });
@@ -368,9 +368,9 @@
         location.reload();
     }
 
-    async function returnItem(i) {
+    async function returnItem(idx) {
         if(confirm('반납 처리하시겠습니까? (구글 시트에도 즉시 반영됩니다)')) {
-            const item = db[i];
+            const item = db[idx];
             const itemDate = String(item.date).split('T')[0];
             const updatePayload = {
                 action: "updateStatus",
@@ -387,7 +387,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatePayload)
                 });
-                db[i].active = false;
+                db[idx].active = false;
                 render();
                 alert('반납 요청을 보냈습니다. 잠시 후 시트를 확인해 주세요.');
             } catch(e) {
