@@ -113,7 +113,7 @@
                     <option value="164">시스템 #2 (164번 - 식품영양과)</option>
                 </select>
             </div>
-            <div><label>신청자 성함</label><input type="text" id="userName"></div>
+            <div><label>예약자 성함</label><input type="text" id="userName"></div>
             <div><label>사번</label><input type="text" id="userNo"></div>
             <div>
                 <label>활용 날짜 선택 (여러 날짜 추가 가능)</label>
@@ -151,6 +151,10 @@
                 </select>
                 <input type="text" id="customSubject" placeholder="교과목 입력" style="margin-top:5px; display:none;">
             </div>
+            <div class="full-width">
+                <label>실제 사용자 (성함)</label>
+                <input type="text" id="actualUser" placeholder="실제 기기를 사용하는 분의 성함을 입력하세요.">
+            </div>
         </div>
         <button id="submitBtn" class="btn-submit" onclick="submitRequest()">📝 신청 완료 및 시트 저장</button>
     </div>
@@ -161,7 +165,8 @@
             <thead>
                 <tr>
                     <th>장비</th>
-                    <th>신청자(사번)</th>
+                    <th>예약자(사번)</th>
+                    <th>사용자</th>
                     <th>날짜</th>
                     <th>시간</th>
                     <th>장소</th>
@@ -176,6 +181,7 @@
 </div>
 
 <script>
+    // 구글 스크립트 최종 URL 반영
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzprzBSQJVfPpyCHrjnn_2yw4P3XHonzL5hOUN8KRbD9KNMBEu8wnZ3i7zh2x8n4cw/exec";
     const ADMIN_PW = "7365";
     let isAdmin = false;
@@ -267,7 +273,6 @@
         body.innerHTML = '';
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
 
-        // 모든 기록(db)을 날짜 상관없이 출력하여 누적 기록 유지
         db.slice().reverse().forEach((item, idx) => {
             const realIdx = db.length - 1 - idx;
             const isAutoReturned = checkAutoReturn(item);
@@ -288,6 +293,7 @@
                 <tr>
                     <td><b>${item.id}호</b></td>
                     <td>${item.name}(${item.no})</td>
+                    <td>${item.actualUser || '-'}</td>
                     <td>${item.date}</td>
                     <td><small>${item.times.replace(/, /g, '<br>')}</small></td>
                     <td>${item.loc}</td>
@@ -313,6 +319,7 @@
         const deviceId = document.getElementById('deviceId').value;
         const name = document.getElementById('userName').value;
         const no = document.getElementById('userNo').value;
+        const actUser = document.getElementById('actualUser').value;
         const times = Array.from(document.querySelectorAll('input[name="useTime"]:checked')).map(c => c.value);
         if(document.getElementById('customTimeCheck').checked) {
             const customVal = document.getElementById('customTimeInput').value;
@@ -321,7 +328,7 @@
         const loc = document.getElementById('locationSelect').value === '직접입력' ? document.getElementById('customLocation').value : document.getElementById('locationSelect').value;
         const sub = document.getElementById('subjectSelect').value === '직접입력' ? document.getElementById('customSubject').value : document.getElementById('subjectSelect').value;
 
-        if(!name || !no || selectedDates.length === 0 || times.length === 0 || !loc || !sub) return alert('모든 정보를 입력하세요.');
+        if(!name || !no || !actUser || selectedDates.length === 0 || times.length === 0 || !loc || !sub) return alert('모든 정보를 입력하세요.');
 
         for (const date of selectedDates) {
             const conflict = db.find(item => 
@@ -340,7 +347,7 @@
         for (const date of selectedDates) {
             const payload = { 
                 action: "insert",
-                id: deviceId, name: name, no: no, date: date, 
+                id: deviceId, name: name, no: no, actualUser: actUser, date: date, 
                 times: times.join(', '), loc: loc, subject: sub, active: true, timestamp: submitTime 
             };
             
@@ -385,12 +392,12 @@
     function clearData() { if(confirm('전체 삭제하시겠습니까? (주의: 시트 데이터는 별도로 삭제해야 합니다)')) { db=[]; render(); } }
     
     function downloadCSV() {
-        let csv = "﻿신청일시,장비번호,이름,사번,활용날짜,활용시간,장소,교과목,상태\n";
+        let csv = "﻿신청일시,장비번호,예약자,사번,사용자,활용날짜,활용시간,장소,교과목,상태\n";
         db.forEach(i => {
             const ts = i.timestamp || "-"; 
             let statusText = (i.active === true || i.active === "true") ? '예약중' : '반납됨';
             if ((i.active === true || i.active === "true") && checkAutoReturn(i)) statusText = '시간 종료';
-            csv += `"${ts}",${i.id},${i.name},${i.no},${i.date},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
+            csv += `"${ts}",${i.id},${i.name},${i.no},${i.actualUser},${i.date},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
