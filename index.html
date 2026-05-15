@@ -13,7 +13,8 @@
             --busy: #DC2626;         
             --bg: #F8FAFC;           
             --text-dark: #1E293B;    
-            --admin-color: #6D28D9;  
+            --admin-color: #6D28D9;
+            --success: #16A34A; /* 반납 완료용 녹색 추가 */
         }
         body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-dark); line-height: 1.6; }
         .container { max-width: 1100px; margin: 0 auto; }
@@ -28,6 +29,12 @@
         .status-badge { display: inline-block; padding: 6px 20px; border-radius: 20px; color: white; font-weight: 700; font-size: 13px; letter-spacing: -0.3px; }
         .status-on { background: var(--available); }
         .status-off { background: var(--busy); }
+
+        /* 상태별 텍스트 배지 스타일 추가 */
+        .badge-returned { background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
+        .badge-active { background: var(--busy); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
+        .badge-timeout { background: #64748B; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
+
         .form-section, .admin-section { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid #E2E8F0; }
         .admin-section { border: 2px solid var(--admin-color); display: none; }
         .admin-section.active { display: block; }
@@ -196,27 +203,21 @@
     }
     updateTimeOptions();
 
-    // 🕒 자동 반납 체크 로직 추가
     function checkAutoReturn(item) {
         if (!item.active) return false;
         const now = new Date();
-        const today = now.toISOString().split('T')[0];
+        const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         
-        // 날짜가 이미 지났을 경우
         if (item.date < today) return true;
         
-        // 오늘 날짜일 경우 시간 체크
         if (item.date === today) {
             try {
                 const times = item.times.split(', ');
-                const lastTimeRange = times[times.length - 1]; // "19:00 ~ 20:00" 형태 추출
-                const endTimeStr = lastTimeRange.split(' ~ ')[1].split(':')[0]; // "20" 추출
+                const lastTimeRange = times[times.length - 1]; 
+                const endTimeStr = lastTimeRange.split(' ~ ')[1].split(':')[0]; 
                 const endHour = parseInt(endTimeStr);
-                
                 if (now.getHours() >= endHour) return true;
-            } catch (e) {
-                return false; 
-            }
+            } catch (e) { return false; }
         }
         return false;
     }
@@ -261,15 +262,19 @@
 
         db.slice().reverse().forEach((item, idx) => {
             const realIdx = db.length - 1 - idx;
-            
-            // 자동 반납 여부 계산
             const isAutoReturned = checkAutoReturn(item);
             const isActuallyActive = item.active && !isAutoReturned;
 
             if (isActuallyActive && item.date === today) statusMap[item.id] = '사용 중';
             
-            let statusText = item.active ? '예약중' : '반납됨';
-            if (item.active && isAutoReturned) statusText = '시간 종료'; // 자동 반납 상태 표시
+            let statusBadgeHtml = '';
+            if (!item.active) {
+                statusBadgeHtml = '<span class="badge-returned">반납 완료</span>';
+            } else if (isAutoReturned) {
+                statusBadgeHtml = '<span class="badge-timeout">시간 종료</span>';
+            } else {
+                statusBadgeHtml = '<span class="badge-active">예약중</span>';
+            }
 
             body.innerHTML += `
                 <tr>
@@ -279,7 +284,7 @@
                     <td><small>${item.times.replace(/, /g, '<br>')}</small></td>
                     <td>${item.loc}</td>
                     <td>${item.subject}</td>
-                    <td><span style="color:${isActuallyActive ? 'var(--primary)' : '#888'}; font-weight:bold;">${statusText}</span></td>
+                    <td>${statusBadgeHtml}</td>
                     <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">
                         ${item.active ? `<button onclick="returnItem(${realIdx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
                     </td>
@@ -335,45 +340,12 @@
 
         for (let i = db.length - selectedDates.length; i < db.length; i++) {
             try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(db[i]),
-                    mode: 'no-cors' 
-                });
-            } catch(e) {
-                console.error("구글 시트 전송 오류:", e);
-            }
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(db[i]), mode: 'no-cors' });
+            } catch(e) { console.error("전송 오류:", e); }
         }
 
-        alert('신청이 완료되었습니다! 아래 현황판을 확인하세요.');
-        
-        document.getElementById('userName').value = '';
-        document.getElementById('userNo').value = '';
-        selectedDates = [];
-        renderTags();
-        document.querySelectorAll('input[name="useTime"]:checked').forEach(c => c.checked = false);
-        document.getElementById('customTimeCheck').checked = false;
-        document.getElementById('customTimeInput').value = '';
-        
-        btn.innerText = "📝 신청 완료 및 시트 저장";
-        btn.disabled = false;
-        render();
-    }
-
-    async function loadData() {
-        db = JSON.parse(localStorage.getItem('m_system_final_v8')) || [];
-        render();
-        
-        try {
-            const res = await fetch(SCRIPT_URL);
-            const cloudData = await res.json();
-            if(cloudData && cloudData.length > 0) {
-                db = cloudData;
-                render();
-            }
-        } catch(e) {
-            console.log("구글 시트 연동 전이나 오프라인 상태입니다. 로컬 데이터를 유지합니다.");
-        }
+        alert('신청이 완료되었습니다!');
+        location.reload();
     }
 
     async function returnItem(i) {
@@ -418,6 +390,16 @@
         link.href = URL.createObjectURL(blob);
         link.download = "운영현황.csv";
         link.click();
+    }
+
+    async function loadData() {
+        db = JSON.parse(localStorage.getItem('m_system_final_v8')) || [];
+        render();
+        try {
+            const res = await fetch(SCRIPT_URL);
+            const cloudData = await res.json();
+            if(cloudData && cloudData.length > 0) { db = cloudData; render(); }
+        } catch(e) { console.log("데이터 연동 중..."); }
     }
 
     loadData();
