@@ -6,58 +6,57 @@
     <title>이동형 콘텐츠 제작 시스템 관리 시스템</title>
     <style>
         :root {
-            --primary: #2c3e50;
-            --accent: #3498db;
-            --available: #27ae60;
-            --busy: #e74c3c;
-            --bg: #f4f7f6;
-            --admin-color: #8e44ad;
+            --primary: #801424;      
+            --primary-dark: #5C0E1A; 
+            --accent: #D97706;       
+            --available: #2563EB;    
+            --busy: #DC2626;         
+            --bg: #F8FAFC;           
+            --text-dark: #1E293B;    
+            --admin-color: #6D28D9;  
         }
-        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; line-height: 1.6; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-dark); line-height: 1.6; }
         .container { max-width: 1100px; margin: 0 auto; }
-        header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; position: relative; }
-        .admin-login-btn { position: absolute; right: 0; top: 0; padding: 5px 12px; font-size: 12px; background: #ddd; border-radius: 5px; cursor: pointer; border: none; }
-
+        header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; position: relative; }
+        header h1 { color: var(--primary); font-size: 26px; margin: 10px 0; font-weight: 800; letter-spacing: -0.5px; }
+        .admin-login-btn { position: absolute; right: 0; top: 5px; padding: 7px 14px; font-size: 12px; background: #475569; color: #FFF; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; transition: 0.2s; }
+        .admin-login-btn:hover { background: var(--primary); }
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); text-align: center; }
-        .card h3 { margin: 10px 0 5px 0; color: var(--primary); }
-        .card .location-info { font-size: 0.9em; color: #666; margin-bottom: 10px; }
-        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 0.8em; }
+        .card { background: white; padding: 22px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-top: 5px solid var(--primary); text-align: center; }
+        .card h3 { margin: 10px 0 5px 0; color: var(--text-dark); font-size: 18px; font-weight: 700; }
+        .card .location-info { font-size: 0.9em; color: #64748B; margin-bottom: 14px; }
+        .status-badge { display: inline-block; padding: 6px 20px; border-radius: 20px; color: white; font-weight: 700; font-size: 13px; letter-spacing: -0.3px; }
         .status-on { background: var(--available); }
         .status-off { background: var(--busy); }
-
-        .form-section, .admin-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-section, .admin-section { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid #E2E8F0; }
         .admin-section { border: 2px solid var(--admin-color); display: none; }
         .admin-section.active { display: block; }
-
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-section h3 { color: var(--primary); margin-top: 0; margin-bottom: 25px; font-size: 20px; font-weight: 700; border-left: 4px solid var(--primary); padding-left: 10px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .full-width { grid-column: span 2; }
-        label { font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 8px; color: var(--primary); }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-
-        .selection-box { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .time-item { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; padding: 5px; }
-        .time-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; margin: 0; }
-
-        .custom-time-row { grid-column: span 2; display: flex; align-items: center; gap: 10px; margin-top: 5px; padding-top: 10px; border-top: 1px dashed #ccc; }
-        .date-tag { background: var(--accent); color: white; padding: 2px 10px; border-radius: 15px; font-size: 12px; display: inline-flex; align-items: center; margin-right: 5px; margin-top: 5px; }
-
-        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; }
-        .btn-excel { background: var(--available); color: white; flex: 2; }
-        .btn-clear { background: var(--busy); color: white; flex: 1; }
-        .btn-logout { background: #666; color: white; flex: 1; }
-
+        label { font-weight: 700; font-size: 0.9em; display: block; margin-bottom: 6px; color: #334155; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #CBD5E1; border-radius: 6px; box-sizing: border-box; font-size: 14px; color: var(--text-dark); background-color: #FFF; transition: 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; background-color: #FFFDFD; box-shadow: 0 0 0 3px rgba(128,20,36,0.08); }
+        .selection-box { background: #F8FAFC; padding: 15px; border: 1px solid #E2E8F0; border-radius: 6px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .time-item { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; padding: 4px; color: #334155; }
+        .time-item.disabled { opacity: 0.4; cursor: not-allowed; }
+        .time-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; margin: 0; accent-color: var(--primary); }
+        .custom-time-row { grid-column: span 2; display: flex; align-items: center; gap: 10px; margin-top: 5px; padding-top: 12px; border-top: 1px dashed #E2E8F0; }
+        .date-tag { background: #475569; color: white; padding: 3px 12px; border-radius: 12px; font-size: 12px; display: inline-flex; align-items: center; margin-right: 6px; margin-top: 6px; font-weight: 600; }
+        .date-tag b { margin-left: 6px; color: #FDA4AF; cursor: pointer; font-size: 13px; }
+        button { padding: 11px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { opacity: 0.95; }
+        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(128,20,36,0.15); }
+        .btn-submit:hover { background: var(--primary-dark); }
+        .btn-excel { background: #16A34A; color: white; flex: 2; }
+        .btn-clear { background: #DC2626; color: white; flex: 1; }
+        .btn-logout { background: #64748B; color: white; flex: 1; }
         .history { margin-top: 40px; overflow-x: auto; }
-        table { width: 100%; background: white; border-collapse: collapse; border-radius: 15px; overflow: hidden; min-width: 900px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; font-size: 13px; }
-        th { background: var(--primary); color: white; }
-
-        @media (max-width: 600px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-            .dashboard { grid-template-columns: 1fr; }
-        }
+        .history h3 { color: var(--text-dark); font-size: 18px; font-weight: 700; }
+        table { width: 100%; background: white; border-collapse: collapse; border-radius: 12px; overflow: hidden; min-width: 900px; box-shadow: 0 4px 12px rgba(0,0,0,0.01); border: 1px solid #E2E8F0; }
+        th, td { padding: 12px; border-bottom: 1px solid #E2E8F0; text-align: center; font-size: 13px; }
+        th { background: #F1F5F9; color: #334155; font-weight: 700; font-size: 13px; border-bottom: 2px solid #CBD5E1; }
+        tr:hover { background-color: #F8FAFC; }
     </style>
 </head>
 <body>
@@ -104,7 +103,7 @@
             <div><label>사번</label><input type="text" id="userNo"></div>
             <div>
                 <label>활용 일자 추가</label>
-                <div style="display:flex; gap:5px;"><input type="date" id="dateInput"><button type="button" onclick="addDate()" style="flex:none; background:#666; color:#fff; padding:5px 10px; border:none; border-radius:5px;">추가</button></div>
+                <div style="display:flex; gap:5px;"><input type="date" id="dateInput" onchange="updateTimeOptions()"><button type="button" onclick="addDate()" style="flex:none; background:#475569; color:#fff; padding:5px 14px; border:none; border-radius:5px; font-weight:bold; font-size:13px;">추가</button></div>
                 <div id="selectedDateList" style="margin-top:10px;"></div>
             </div>
             <div class="full-width">
@@ -143,7 +142,7 @@
     </div>
 
     <div class="history">
-        <h3>📅 전체 운영 현황 (오늘 날짜 기준 자동 상태 업데이트)</h3>
+        <h3>📅 전체 운영 현황 (누구나 확인 가능)</h3>
         <table>
             <thead>
                 <tr>
@@ -163,24 +162,39 @@
 </div>
 
 <script>
-    // ✅ 제공해주신 구글 앱스 스크립트 주소가 적용되었습니다.
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8sO6MnUF50hjqSM_QT54Ggvdc4rcYUsi0YSsJK1aB99EPwre8nKLMtsGVtwTwMz0r/exec";
-
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4NQXWZIDNcW8CyQByK6c0XfnYfWFEBityXvc0mZJXhXeLlCaQfEQIaWWLtpwfdGPi/exec";
     const ADMIN_PW = "7365";
     let isAdmin = false;
     let db = [];
 
-    const timeOptions = document.getElementById('timeOptions');
-    for (let i = 9; i < 19; i++) {
-        const timeLabel = `${i}:00 ~ ${i+1}:00`;
-        timeOptions.innerHTML += `<label class="time-item"><input type="checkbox" name="useTime" value="${timeLabel}"><span>${timeLabel}</span></label>`;
+    const todayStr = new Date().toISOString().split('T')[0];
+    document.getElementById('dateInput').min = todayStr;
+
+    function updateTimeOptions() {
+        const timeOptions = document.getElementById('timeOptions');
+        const selectedDate = document.getElementById('dateInput').value;
+        const now = new Date();
+        const currentHour = now.getHours();
+        
+        timeOptions.innerHTML = '';
+        for (let i = 9; i < 20; i++) {
+            const timeLabel = `${i}:00 ~ ${i+1}:00`;
+            const isPast = (selectedDate === todayStr && i <= currentHour);
+            
+            timeOptions.innerHTML += `
+                <label class="time-item ${isPast ? 'disabled' : ''}">
+                    <input type="checkbox" name="useTime" value="${timeLabel}" ${isPast ? 'disabled' : ''}>
+                    <span>${timeLabel}</span>
+                </label>`;
+        }
+        timeOptions.innerHTML += `
+            <div class="custom-time-row">
+                <label class="time-item" style="flex:none;"><input type="checkbox" id="customTimeCheck"><span style="font-weight:bold; color:var(--accent);">직접 입력:</span></label>
+                <input type="text" id="customTimeInput" placeholder="예: 08:30~10:00" style="padding:5px 10px; font-size:13px;">
+            </div>
+        `;
     }
-    timeOptions.innerHTML += `
-        <div class="custom-time-row">
-            <label class="time-item" style="flex:none;"><input type="checkbox" id="customTimeCheck"><span style="font-weight:bold; color:var(--accent);">직접 입력:</span></label>
-            <input type="text" id="customTimeInput" placeholder="예: 08:30~10:00" style="padding:5px 10px; font-size:13px;">
-        </div>
-    `;
+    updateTimeOptions();
 
     let selectedDates = [];
     function addDate() {
@@ -214,10 +228,8 @@
     function render() {
         const body = document.getElementById('historyBody');
         const statusMap = { '163': '사용 가능', '164': '사용 가능' };
-        
         const now = new Date();
-        const offset = now.getTimezoneOffset() * 60000;
-        const today = new Date(now.getTime() - offset).toISOString().split('T')[0];
+        const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         
         body.innerHTML = '';
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
@@ -231,12 +243,12 @@
                     <td><b>${item.id}호</b></td>
                     <td>${item.name}(${item.no})</td>
                     <td>${item.date}</td>
-                    <td><small>${Array.isArray(item.times) ? item.times.join('<br>') : item.times}</small></td>
+                    <td><small>${item.times.replace(/, /g, '<br>')}</small></td>
                     <td>${item.loc}</td>
                     <td>${item.subject}</td>
-                    <td>${item.active ? '<span style="color:#e67e22;font-weight:bold;">예약중</span>' : '반납됨'}</td>
+                    <td>${item.active ? '<span style="color:var(--primary);font-weight:bold;">예약중</span>' : '반납됨'}</td>
                     <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">
-                        ${item.active ? `<button onclick="returnItem(${realIdx})" style="font-size:11px; background:#e74c3c; color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
+                        ${item.active ? `<button onclick="returnItem(${realIdx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
                     </td>
                 </tr>`;
         });
@@ -252,6 +264,7 @@
     }
 
     async function submitRequest() {
+        const deviceId = document.getElementById('deviceId').value;
         const name = document.getElementById('userName').value;
         const no = document.getElementById('userNo').value;
         const times = Array.from(document.querySelectorAll('input[name="useTime"]:checked')).map(c => c.value);
@@ -264,59 +277,75 @@
 
         if(!name || !no || selectedDates.length === 0 || times.length === 0 || !loc || !sub) return alert('모든 정보를 입력하세요.');
 
+        // 중복 체크 로직
+        for (const date of selectedDates) {
+            const conflict = db.find(item => 
+                item.active && 
+                item.id === deviceId && 
+                item.date === date && 
+                times.some(t => item.times.includes(t))
+            );
+            
+            if (conflict) {
+                return alert(`중복 예약 오류:\n${date} 날짜의 선택하신 시간대는 이미 예약되어 있습니다.`);
+            }
+        }
+
         const btn = document.getElementById('submitBtn');
         btn.innerText = "⏳ 시트 저장 중...";
         btn.disabled = true;
 
+        const submitTime = new Date().toLocaleString('ko-KR');
+
         for (const date of selectedDates) {
             const payload = { 
-                id: document.getElementById('deviceId').value, 
+                id: deviceId, 
                 name: name, 
                 no: no, 
                 date: date, 
                 times: times.join(', '), 
                 loc: loc, 
                 subject: sub, 
-                active: true 
+                active: true,
+                timestamp: submitTime 
             };
-            
+            db.push(payload);
+        }
+        render();
+
+        for (let i = db.length - selectedDates.length; i < db.length; i++) {
             try {
-                // 시트에 데이터 전송
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(payload),
-                    mode: 'no-cors'
+                    body: JSON.stringify(db[i]),
+                    mode: 'no-cors' 
                 });
-                db.push(payload);
-            } catch(e) {
-                console.error("전송 오류:", e);
-            }
+            } catch(e) { console.error("전송 오류:", e); }
         }
 
-        alert('신청이 완료되었습니다! 데이터가 구글 시트에 기록되었습니다.');
-        location.reload(); 
+        alert('신청이 완료되었습니다!');
+        location.reload();
     }
 
     async function loadData() {
         db = JSON.parse(localStorage.getItem('m_system_final_v8')) || [];
-        
+        render();
         try {
             const res = await fetch(SCRIPT_URL);
             const cloudData = await res.json();
-            if(cloudData && cloudData.length > 0) db = cloudData;
-        } catch(e) {
-            console.log("시트 데이터를 불러올 수 없어 로컬 데이터를 사용합니다.");
-        }
-        render();
+            if(cloudData && cloudData.length > 0) { db = cloudData; render(); }
+        } catch(e) { console.log("데이터 연동 중..."); }
     }
 
     function returnItem(i) { if(confirm('반납 처리하시겠습니까?')) { db[i].active = false; render(); } }
     function clearData() { if(confirm('전체 삭제하시겠습니까?')) { db=[]; render(); } }
+    
     function downloadCSV() {
-        let csv = "﻿장비번호,이름,사번,날짜,시간,장소,교과목,상태
-";
-        db.forEach(i => csv += `${i.id},${i.name},${i.no},${i.date},"${Array.isArray(i.times) ? i.times.join('|') : i.times}",${i.loc},${i.subject},${i.active?'예약중':'반납'}
-`);
+        let csv = "﻿신청일시,장비번호,이름,사번,활용날짜,활용시간,장소,교과목,상태\n";
+        db.forEach(i => {
+            const ts = i.timestamp || "-"; 
+            csv += `"${ts}",${i.id},${i.name},${i.no},${i.date},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${i.active?'예약중':'반납'}\n`;
+        });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
