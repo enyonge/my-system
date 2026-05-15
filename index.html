@@ -73,7 +73,7 @@
 
 <div class="container">
     <div class="logo-container">
-        <img src="https://lh3.googleusercontent.com/d/1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo">
+        <img src="https://drive.google.com/uc?export=view&id=1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo">
     </div>
 
     <header>
@@ -116,12 +116,12 @@
             <div><label>신청자 성함</label><input type="text" id="userName"></div>
             <div><label>사번</label><input type="text" id="userNo"></div>
             <div>
-                <label>활용 일자 추가</label>
-                <div style="display:flex; gap:5px;"><input type="date" id="dateInput" onchange="updateTimeOptions()"><button type="button" onclick="addDate()" style="flex:none; background:#475569; color:#fff; padding:5px 14px; border:none; border-radius:5px; font-weight:bold; font-size:13px;">추가</button></div>
+                <label>활용 날짜 선택 (여러 날짜 추가 가능)</label>
+                <div style="display:flex; gap:5px;"><input type="date" id="dateInput"><button type="button" onclick="addDate()" style="flex:none; background:#475569; color:#fff; padding:5px 14px; border:none; border-radius:5px; font-weight:bold; font-size:13px;">추가</button></div>
                 <div id="selectedDateList" style="margin-top:10px;"></div>
             </div>
             <div class="full-width">
-                <label>활용 시간 (중복 선택)</label>
+                <label>활용 시간 (선택한 모든 날짜에 공통 적용)</label>
                 <div id="timeOptions" class="selection-box"></div>
             </div>
             <div class="full-width">
@@ -156,7 +156,7 @@
     </div>
 
     <div class="history">
-        <h3>📅 전체 운영 현황 (누구나 확인 가능)</h3>
+        <h3>📅 전체 예약 현황 (누구나 확인 가능)</h3>
         <table>
             <thead>
                 <tr>
@@ -180,24 +180,19 @@
     const ADMIN_PW = "7365";
     let isAdmin = false;
     let db = [];
+    let selectedDates = [];
 
     const todayStr = new Date().toISOString().split('T')[0];
     document.getElementById('dateInput').min = todayStr;
 
-    function updateTimeOptions() {
+    function initTimeOptions() {
         const timeOptions = document.getElementById('timeOptions');
-        const selectedDate = document.getElementById('dateInput').value;
-        const now = new Date();
-        const currentHour = now.getHours();
-        
         timeOptions.innerHTML = '';
         for (let i = 9; i < 20; i++) {
             const timeLabel = `${i}:00 ~ ${i+1}:00`;
-            const isPast = (selectedDate === todayStr && i <= currentHour);
-            
             timeOptions.innerHTML += `
-                <label class="time-item ${isPast ? 'disabled' : ''}">
-                    <input type="checkbox" name="useTime" value="${timeLabel}" ${isPast ? 'disabled' : ''}>
+                <label class="time-item">
+                    <input type="checkbox" name="useTime" value="${timeLabel}">
                     <span>${timeLabel}</span>
                 </label>`;
         }
@@ -208,7 +203,43 @@
             </div>
         `;
     }
-    updateTimeOptions();
+    initTimeOptions();
+
+    function addDate() {
+        const d = document.getElementById('dateInput').value;
+        if(d && !selectedDates.includes(d)) { selectedDates.push(d); renderTags(); }
+        document.getElementById('dateInput').value = '';
+    }
+
+    function renderTags() {
+        document.getElementById('selectedDateList').innerHTML = selectedDates.map(d => `<span class="date-tag">${d} <b onclick="removeDate('${d}')">×</b></span>`).join('');
+    }
+
+    function removeDate(d) {
+        selectedDates = selectedDates.filter(x => x !== d);
+        renderTags();
+    }
+
+    function toggleInp(s, i) { document.getElementById(i).style.display = (document.getElementById(s).value === '직접입력') ? 'block' : 'none'; }
+
+    function toggleAdmin() {
+        if (!isAdmin) {
+            const pw = prompt("관리자 비밀번호를 입력하세요.");
+            if (pw === ADMIN_PW) {
+                isAdmin = true;
+                document.getElementById('adminSection').classList.add('active');
+                document.getElementById('adminBtn').innerText = "🔓 관리 중";
+                render();
+            } else if(pw !== null) { alert("비밀번호가 틀렸습니다."); }
+        } else { logoutAdmin(); }
+    }
+
+    function logoutAdmin() {
+        isAdmin = false;
+        document.getElementById('adminSection').classList.remove('active');
+        document.getElementById('adminBtn').innerText = "🔒 관리자 모드";
+        render();
+    }
 
     function checkAutoReturn(item) {
         if (item.active === false || item.active === "false") return false;
@@ -227,35 +258,6 @@
         return false;
     }
 
-    let selectedDates = [];
-    function addDate() {
-        const d = document.getElementById('dateInput').value;
-        if(d && !selectedDates.includes(d)) { selectedDates.push(d); renderTags(); }
-        document.getElementById('dateInput').value = '';
-    }
-    function renderTags() {
-        document.getElementById('selectedDateList').innerHTML = selectedDates.map(d => `<span class="date-tag">${d} <b onclick="selectedDates=selectedDates.filter(x=>x!=='${d}');renderTags()" style="cursor:pointer">×</b></span>`).join('');
-    }
-    function toggleInp(s, i) { document.getElementById(i).style.display = (document.getElementById(s).value === '직접입력') ? 'block' : 'none'; }
-
-    function toggleAdmin() {
-        if (!isAdmin) {
-            const pw = prompt("관리자 비밀번호를 입력하세요.");
-            if (pw === ADMIN_PW) {
-                isAdmin = true;
-                document.getElementById('adminSection').classList.add('active');
-                document.getElementById('adminBtn').innerText = "🔓 관리 중";
-                render();
-            } else if(pw !== null) { alert("비밀번호가 틀렸습니다."); }
-        } else { logoutAdmin(); }
-    }
-    function logoutAdmin() {
-        isAdmin = false;
-        document.getElementById('adminSection').classList.remove('active');
-        document.getElementById('adminBtn').innerText = "🔒 관리자 모드";
-        render();
-    }
-
     function render() {
         const body = document.getElementById('historyBody');
         const statusMap = { '163': '사용 가능', '164': '사용 가능' };
@@ -265,6 +267,7 @@
         body.innerHTML = '';
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
 
+        // 모든 기록(db)을 날짜 상관없이 출력하여 누적 기록 유지
         db.slice().reverse().forEach((item, idx) => {
             const realIdx = db.length - 1 - idx;
             const isAutoReturned = checkAutoReturn(item);
@@ -370,7 +373,6 @@
                     body: JSON.stringify(updatePayload),
                     mode: 'no-cors'
                 });
-                
                 db[i].active = false;
                 render();
                 alert('반납 처리가 완료되었습니다.');
@@ -380,7 +382,7 @@
         }
     }
 
-    function clearData() { if(confirm('전체 삭제하시겠습니까?')) { db=[]; render(); } }
+    function clearData() { if(confirm('전체 삭제하시겠습니까? (주의: 시트 데이터는 별도로 삭제해야 합니다)')) { db=[]; render(); } }
     
     function downloadCSV() {
         let csv = "﻿신청일시,장비번호,이름,사번,활용날짜,활용시간,장소,교과목,상태\n";
@@ -388,7 +390,6 @@
             const ts = i.timestamp || "-"; 
             let statusText = (i.active === true || i.active === "true") ? '예약중' : '반납됨';
             if ((i.active === true || i.active === "true") && checkAutoReturn(i)) statusText = '시간 종료';
-            
             csv += `"${ts}",${i.id},${i.name},${i.no},${i.date},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -404,7 +405,6 @@
             db = JSON.parse(localData);
             render();
         }
-
         try {
             const res = await fetch(SCRIPT_URL);
             const cloudData = await res.json();
