@@ -20,7 +20,7 @@
         .container { max-width: 1100px; margin: 0 auto; }
         
         .logo-container { text-align: center; margin-bottom: 10px; }
-        .university-logo { max-width: 250px; height: auto; }
+        .university-logo { max-width: 250px; height: auto; display: inline-block; }
 
         header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 15px; position: relative; }
         header h1 { color: var(--primary); font-size: 26px; margin: 10px 0; font-weight: 800; letter-spacing: -0.5px; }
@@ -73,7 +73,7 @@
 
 <div class="container">
     <div class="logo-container">
-        <img src="https://drive.google.com/uc?export=view&id=1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo">
+        <img src="https://lh3.googleusercontent.com/d/1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo" onerror="this.src='https://i.ibb.co/v4KjX7x/image.png'">
     </div>
 
     <header>
@@ -388,7 +388,7 @@
         }
     }
 
-    function clearData() { if(confirm('전체 삭제하시겠습니까? (주의: 시트 데이터는 별도로 삭제해야 합니다)')) { db=[]; render(); } }
+    function clearData() { if(confirm('전체 삭제하시겠습니까?')) { db=[]; render(); } }
     
     function downloadCSV() {
         let csv = "﻿신청일시,장비번호,예약자,사번,사용자,활용날짜,활용시간,장소,교과목,상태\n";
