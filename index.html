@@ -249,8 +249,12 @@
         if (item.active === false || item.active === "false") return false;
         const now = new Date();
         const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-        if (item.date < today) return true;
-        if (item.date === today) {
+        
+        // 날짜 포맷 정리 (T 이후 문자 제거)
+        const itemDate = String(item.date).split('T')[0];
+        
+        if (itemDate < today) return true;
+        if (itemDate === today) {
             try {
                 const times = item.times.split(', ');
                 const lastTimeRange = times[times.length - 1]; 
@@ -273,10 +277,14 @@
 
         db.slice().reverse().forEach((item, idx) => {
             const realIdx = db.length - 1 - idx;
+            
+            // 활용날짜 연도-월-일 변환
+            const formattedDate = String(item.date).split('T')[0];
+            
             const isAutoReturned = checkAutoReturn(item);
             const isActuallyActive = (item.active === true || item.active === "true") && !isAutoReturned;
 
-            if (isActuallyActive && item.date === today) statusMap[item.id] = '사용 중';
+            if (isActuallyActive && formattedDate === today) statusMap[item.id] = '사용 중';
             
             let statusBadgeHtml = '';
             if (item.active === false || item.active === "false") {
@@ -292,7 +300,7 @@
                     <td><b>${item.id}호</b></td>
                     <td>${item.name}(${item.no})</td>
                     <td>${item.actualUser || '-'}</td>
-                    <td>${item.date}</td>
+                    <td>${formattedDate}</td>
                     <td><small>${item.times.replace(/, /g, '<br>')}</small></td>
                     <td>${item.loc}</td>
                     <td>${item.subject}</td>
@@ -329,10 +337,11 @@
         if(!name || !no || !actUser || selectedDates.length === 0 || times.length === 0 || !loc || !sub) return alert('모든 정보를 입력하세요.');
 
         for (const date of selectedDates) {
-            const conflict = db.find(item => 
-                (item.active === true || item.active === "true") && !checkAutoReturn(item) && item.id === deviceId && item.date === date && 
-                times.some(t => item.times.includes(t))
-            );
+            const conflict = db.find(item => {
+                const itemDate = String(item.date).split('T')[0];
+                return (item.active === true || item.active === "true") && !checkAutoReturn(item) && item.id === deviceId && itemDate === date && 
+                times.some(t => item.times.includes(t));
+            });
             if (conflict) return alert(`중복 예약 오류:\n${date} 날짜의 선택하신 시간대는 이미 예약되어 있습니다.`);
         }
 
@@ -362,12 +371,13 @@
     async function returnItem(i) {
         if(confirm('반납 처리하시겠습니까? (구글 시트에도 즉시 반영됩니다)')) {
             const item = db[i];
+            const itemDate = String(item.date).split('T')[0];
             const updatePayload = {
                 action: "updateStatus",
                 id: String(item.id),
                 name: String(item.name),
                 no: String(item.no),
-                date: String(item.date)
+                date: itemDate
             };
 
             try {
@@ -393,9 +403,10 @@
         let csv = "﻿신청일시,장비번호,예약자,사번,사용자,활용날짜,활용시간,장소,교과목,상태\n";
         db.forEach(i => {
             const ts = i.timestamp || "-"; 
+            const formattedDate = String(i.date).split('T')[0];
             let statusText = (i.active === true || i.active === "true") ? '예약중' : '반납됨';
             if ((i.active === true || i.active === "true") && checkAutoReturn(i)) statusText = '시간 종료';
-            csv += `"${ts}",${i.id},${i.name},${i.no},${i.actualUser},${i.date},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
+            csv += `"${ts}",${i.id},${i.name},${i.no},${i.actualUser},${formattedDate},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
