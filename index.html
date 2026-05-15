@@ -73,7 +73,7 @@
 
 <div class="container">
     <div class="logo-container">
-        <img src="image_ed3820.png" alt="계명문화대학교 로고" class="university-logo">
+        <img src="https://lh3.googleusercontent.com/d/1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo">
     </div>
 
     <header>
@@ -365,14 +365,12 @@
             };
 
             try {
-                // 구글 시트 업데이트 요청
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify(updatePayload),
                     mode: 'no-cors'
                 });
                 
-                // 로컬 데이터 상태 변경 및 UI 갱신
                 db[i].active = false;
                 render();
                 alert('반납 처리가 완료되었습니다.');
@@ -401,14 +399,12 @@
     }
 
     async function loadData() {
-        // 로컬 데이터 먼저 로드
         const localData = localStorage.getItem('m_system_final_v8');
         if (localData) {
             db = JSON.parse(localData);
             render();
         }
 
-        // 구글 시트에서 최신 데이터 가져오기
         try {
             const res = await fetch(SCRIPT_URL);
             const cloudData = await res.json();
