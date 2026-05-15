@@ -72,7 +72,7 @@
 
 <div class="container">
     <div class="logo-container">
-        <img src="https://drive.google.com/uc?export=view&id=1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV" alt="계명문화대학교 로고" class="university-logo">
+        <img src="https://drive.google.com/thumbnail?id=1eBpeNpuoOK_ULQ9AVZx67-ZYgXqfqCzV&sz=w1000" alt="계명문화대학교 로고" class="university-logo">
     </div>
 
     <header>
@@ -359,7 +359,6 @@
         location.reload();
     }
 
-    // 🛠️ 수정된 반납 함수 적용
     async function returnItem(i) {
         if(confirm('반납 처리하시겠습니까? (구글 시트에도 즉시 반영됩니다)')) {
             const item = db[i];
@@ -378,7 +377,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatePayload)
                 });
-
                 db[i].active = false;
                 render();
                 alert('반납 요청을 보냈습니다. 잠시 후 시트를 확인해 주세요.');
