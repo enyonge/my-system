@@ -272,7 +272,7 @@
         body.innerHTML = '';
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
 
-        // 💡 날짜 기준 오름차순 정렬 보강 (날짜 객체 변환 후 비교)
+        // 날짜 기준 오름차순 정렬 (과거 -> 미래)
         db.sort((a, b) => {
             const dateA = new Date(String(a.date).split('T')[0]);
             const dateB = new Date(String(b.date).split('T')[0]);
@@ -282,18 +282,16 @@
         db.forEach((item, idx) => {
             const formattedDate = String(item.date).split('T')[0];
             const isAutoReturned = checkAutoReturn(item);
-            const isActuallyActive = (item.active === true || item.active === "true") && !isAutoReturned;
-
-            if (isActuallyActive && formattedDate === today) statusMap[item.id] = '사용 중';
             
-            let statusBadgeHtml = '';
-            if (item.active === false || item.active === "false") {
-                statusBadgeHtml = '<span class="badge-returned">반납 완료</span>';
-            } else if (isAutoReturned) {
-                statusBadgeHtml = '<span class="badge-timeout">시간 종료</span>';
-            } else {
-                statusBadgeHtml = '<span class="badge-active">예약중</span>';
+            // 수동 반납 혹은 시간이 지나 자동반납 처리된 내역은 전체 예약 현황판에서 아예 제외(숨김 처리)
+            if (item.active === false || item.active === "false" || isAutoReturned) {
+                return; 
             }
+
+            // 숨겨지지 않고 살아있는 유효한 예약인 경우 대시보드 상태를 '사용 중'으로 변경
+            if (formattedDate === today) statusMap[item.id] = '사용 중';
+            
+            let statusBadgeHtml = '<span class="badge-active">예약중</span>';
 
             body.innerHTML += `
                 <tr>
@@ -306,7 +304,7 @@
                     <td>${item.subject}</td>
                     <td>${statusBadgeHtml}</td>
                     <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">
-                        ${(item.active === true || item.active === "true") ? `<button onclick="returnItem(${idx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
+                        <button onclick="returnItem(${idx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>
                     </td>
                 </tr>`;
         });
