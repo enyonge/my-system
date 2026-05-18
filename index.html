@@ -37,6 +37,7 @@
         .badge-returned { background: var(--success); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
         .badge-active { background: var(--busy); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
         .badge-timeout { background: #64748B; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
+        .badge-canceled { background: #94A3B8; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; }
 
         .form-section, .admin-section { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid #E2E8F0; }
         .admin-section { border: 2px solid var(--admin-color); display: none; }
@@ -55,7 +56,7 @@
         .date-tag b { margin-left: 6px; color: #FDA4AF; cursor: pointer; font-size: 13px; }
         button { padding: 11px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { opacity: 0.95; }
-        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(128,20,36,0.15); }
         .btn-submit:hover { background: var(--primary-dark); }
         .btn-excel { background: #16A34A; color: white; flex: 2; }
         .btn-clear { background: #DC2626; color: white; flex: 1; }
@@ -248,7 +249,7 @@
     }
 
     function checkAutoReturn(item) {
-        if (item.active === false || item.active === "false") return true;
+        if (item.active === false || item.active === "false" || item.active === "취소") return true;
         const now = new Date();
         const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         const itemDate = String(item.date).split('T')[0];
@@ -288,19 +289,35 @@
                 statusMap[item.id] = '사용 중';
             }
 
+            // 일반 사용자 모드일 때는 수동 반납, 자동 반납, 취소된 예약을 현황판 목록에서 전부 숨김
             if (!isAdmin) {
-                if (item.active === false || item.active === "false" || isAutoReturned) {
+                if (item.active === false || item.active === "false" || item.active === "취소" || isAutoReturned) {
                     return; 
                 }
             }
 
             let statusBadgeHtml = '';
-            if (item.active === false || item.active === "false") {
+            if (item.active === "취소") {
+                statusBadgeHtml = '<span class="badge-canceled">취소 완료</span>';
+            } else if (item.active === false || item.active === "false") {
                 statusBadgeHtml = '<span class="badge-returned">반납 완료</span>';
             } else if (isAutoReturned) {
                 statusBadgeHtml = '<span class="badge-timeout">시간 종료</span>';
             } else {
                 statusBadgeHtml = '<span class="badge-active">예약중</span>';
+            }
+
+            // 관리자 모드 버튼 배치 설계
+            let adminButtons = '-';
+            if (isAdmin) {
+                const canProcess = (item.active === true || item.active === "true") && !isAutoReturned;
+                adminButtons = `
+                    <div style="display:flex; gap:3px; justify-content:center; align-items:center;">
+                        ${canProcess ? `<button onclick="returnItem(${idx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 5px; cursor:pointer;">반납</button>` : ''}
+                        ${canProcess ? `<button onclick="cancelItem(${idx})" style="font-size:11px; background:var(--accent); color:white; border:none; border-radius:3px; padding:3px 5px; cursor:pointer;">취소</button>` : ''}
+                        <button onclick="editItem(${idx})" style="font-size:11px; background:#475569; color:white; border:none; border-radius:3px; padding:3px 5px; cursor:pointer;">수정</button>
+                    </div>
+                `;
             }
 
             body.innerHTML += `
@@ -313,12 +330,7 @@
                     <td>${item.loc}</td>
                     <td>${item.subject}</td>
                     <td>${statusBadgeHtml}</td>
-                    <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">
-                        <div style="display:flex; gap:3px; justify-content:center;">
-                            ${(item.active === true || item.active === "true") && !isAutoReturned ? `<button onclick="returnItem(${idx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 6px; cursor:pointer;">반납</button>` : '-'}
-                            <button onclick="editItem(${idx})" style="font-size:11px; background:#475569; color:white; border:none; border-radius:3px; padding:3px 6px; cursor:pointer;">수정</button>
-                        </div>
-                    </td>
+                    <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">${adminButtons}</td>
                 </tr>`;
         });
 
@@ -330,6 +342,36 @@
             }
         });
         localStorage.setItem('m_system_final_v8', JSON.stringify(db));
+    }
+
+    async function cancelItem(idx) {
+        if(confirm('해당 예약을 취소 처리하시겠습니까? (구글 시트 실적 이력에는 반영 보존됩니다)')) {
+            const item = db[idx];
+            const itemDate = String(item.date).split('T')[0];
+            const updatePayload = {
+                action: "updateStatus",
+                id: String(item.id),
+                name: String(item.name),
+                no: String(item.no),
+                date: itemDate,
+                statusValue: "취소" // 구글 시트에 "취소" 텍스트를 심기 위한 시그널
+            };
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePayload)
+                });
+                db[idx].active = "취소";
+                render();
+                alert('예약이 정상적으로 취소 처리되었습니다.');
+            } catch(e) {
+                console.error("취소 오류:", e);
+                alert('네트워크 오류가 발생했습니다.');
+            }
+        }
     }
 
     async function editItem(idx) {
@@ -452,7 +494,8 @@
                 id: String(item.id),
                 name: String(item.name),
                 no: String(item.no),
-                date: itemDate
+                date: itemDate,
+                statusValue: "반납"
             };
 
             try {
@@ -493,7 +536,7 @@
                     } catch(e){}
                 }
             }
-            let statusText = (i.active === true || i.active === "true") ? '예약중' : '반납됨';
+            let statusText = (i.active === true || i.active === "true") ? '예약중' : (i.active === "취소" ? '취소됨' : '반납됨');
             if ((i.active === true || i.active === "true") && isAuto) statusText = '시간 종료(자동 반납)';
             csv += `"${ts}",${i.id},${i.name},${i.no},${i.actualUser},${formattedDate},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
         });
