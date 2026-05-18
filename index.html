@@ -55,7 +55,7 @@
         .date-tag b { margin-left: 6px; color: #FDA4AF; cursor: pointer; font-size: 13px; }
         button { padding: 11px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { opacity: 0.95; }
-        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(128,20,36,0.15); }
+        .btn-submit { width: 100%; background: var(--primary); color: white; margin-top: 20px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .btn-submit:hover { background: var(--primary-dark); }
         .btn-excel { background: #16A34A; color: white; flex: 2; }
         .btn-clear { background: #DC2626; color: white; flex: 1; }
@@ -240,13 +240,14 @@
 
     function logoutAdmin() {
         isAdmin = false;
-        document.getElementById('adminSection').classList.remove('active');
+        document.getElementById('adminSection').classList.remove('remove');
+        document.getElementById('adminSection').style.display = 'none';
         document.getElementById('adminBtn').innerText = "🔒 관리자 모드";
         render();
     }
 
     function checkAutoReturn(item) {
-        if (item.active === false || item.active === "false") return false;
+        if (item.active === false || item.active === "false") return true;
         const now = new Date();
         const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         const itemDate = String(item.date).split('T')[0];
@@ -283,15 +284,27 @@
             const formattedDate = String(item.date).split('T')[0];
             const isAutoReturned = checkAutoReturn(item);
             
-            // 수동 반납 혹은 시간이 지나 자동반납 처리된 내역은 전체 예약 현황판에서 아예 제외(숨김 처리)
-            if (item.active === false || item.active === "false" || isAutoReturned) {
-                return; 
+            // 대시보드 실시간 가동 상태 연산용 (반납되지 않은 오늘 예약만 '사용 중' 표시)
+            if ((item.active === true || item.active === "true") && !isAutoReturned && formattedDate === today) {
+                statusMap[item.id] = '사용 중';
             }
 
-            // 숨겨지지 않고 살아있는 유효한 예약인 경우 대시보드 상태를 '사용 중'으로 변경
-            if (formattedDate === today) statusMap[item.id] = '사용 중';
-            
-            let statusBadgeHtml = '<span class="badge-active">예약중</span>';
+            // 👑 설계 포인트: 데이터베이스 이력은 유지하되, 관리자가 아닐 때만 화면에서 제외
+            if (!isAdmin) {
+                if (item.active === false || item.active === "false" || isAutoReturned) {
+                    return; // 일반 모드일 때는 화면 목록에서 숨김
+                }
+            }
+
+            // 상태 배지 정의
+            let statusBadgeHtml = '';
+            if (item.active === false || item.active === "false") {
+                statusBadgeHtml = '<span class="badge-returned">반납 완료</span>';
+            } else if (isAutoReturned) {
+                statusBadgeHtml = '<span class="badge-timeout">시간 종료</span>';
+            } else {
+                statusBadgeHtml = '<span class="badge-active">예약중</span>';
+            }
 
             body.innerHTML += `
                 <tr>
@@ -304,7 +317,7 @@
                     <td>${item.subject}</td>
                     <td>${statusBadgeHtml}</td>
                     <td class="admin-only" style="display:${isAdmin?'table-cell':'none'}">
-                        <button onclick="returnItem(${idx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>
+                        ${(item.active === true || item.active === "true") && !isAutoReturned ? `<button onclick="returnItem(${idx})" style="font-size:11px; background:var(--busy); color:white; border:none; border-radius:3px; padding:3px 7px; cursor:pointer;">반납</button>` : '-'}
                     </td>
                 </tr>`;
         });
@@ -387,7 +400,7 @@
                 });
                 db[idx].active = false;
                 render();
-                alert('반납 요청을 보냈습니다. 잠시 후 시트를 확인해 주세요.');
+                alert('반납 처리가 완료되었습니다.');
             } catch(e) {
                 console.error("반납 오류:", e);
                 alert('네트워크 오류가 발생했습니다.');
@@ -402,14 +415,29 @@
         db.forEach(i => {
             const ts = i.timestamp || "-"; 
             const formattedDate = String(i.date).split('T')[0];
+            let isAuto = false;
+            // 로직 대조용 복제 객체 생성하여 자동 반납 판정
+            if (i.active === true || i.active === "true") {
+                const now = new Date();
+                const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                if (formattedDate < today) isAuto = true;
+                else if (formattedDate === today) {
+                    try {
+                        const times = i.times.split(', ');
+                        const lastTimeRange = times[times.length - 1]; 
+                        const endTimeStr = lastTimeRange.split(' ~ ')[1].split(':')[0]; 
+                        if (now.getHours() >= parseInt(endTimeStr)) isAuto = true;
+                    } catch(e){}
+                }
+            }
             let statusText = (i.active === true || i.active === "true") ? '예약중' : '반납됨';
-            if ((i.active === true || i.active === "true") && checkAutoReturn(i)) statusText = '시간 종료';
+            if ((i.active === true || i.active === "true") && isAuto) statusText = '시간 종료(자동 반납)';
             csv += `"${ts}",${i.id},${i.name},${i.no},${i.actualUser},${formattedDate},"${i.times.replace(/,/g, '|')}",${i.loc},${i.subject},${statusText}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "운영현황.csv";
+        link.download = "운영현황_전체실적.csv";
         link.click();
     }
 
